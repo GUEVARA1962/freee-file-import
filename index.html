@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計アプリ UI (n8n連携版)</title>
+    <!-- Tailwind CSSを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Interフォントを適用 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* ドラッグオーバー時のスタイル */
+        .drag-over {
+            background-color: #e0f2fe; /* sky-100 */
+            border-color: #0284c7; /* sky-600 */
+        }
+        /* ローディングスピナー */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen">
+
+    <!-- スマートフォンの画面を模したコンテナ -->
+    <div class="w-full max-w-sm h-[80vh] max-h-[700px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+
+        <!-- ===== メインUI ===== -->
+        <div id="main-ui" class="flex flex-col h-full">
+            <!-- ヘッダーエリア -->
+            <header class="p-6 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-blue-500">freee 会計</h1>
+                <p class="text-2xl text-black mt-1">データ化アプリ</p>
+            </header>
+
+            <!-- メインコンテンツエリア -->
+            <main class="flex-grow p-6 bg-gray-50">
+                <div class="text-center text-black h-full flex items-center justify-center">
+                    <p>下のメニューから選択してください</p>
+                </div>
+            </main>
+
+            <!-- 下部ナビゲーション -->
+            <footer class="grid grid-cols-3 gap-4 p-6 border-t border-gray-200 bg-white">
+                <!-- 各ボタンに data-target 属性を追加 -->
+                <button data-target="sub-ui-cash" class="btn-menu flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span class="text-sm font-medium">現金</span>
+                </button>
+                <button data-target="sub-ui-bank" class="btn-menu flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    <span class="text-sm font-medium">通帳</span>
+                </button>
+                <button data-target="sub-ui-card" class="btn-menu flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    <span class="text-sm font-medium">カード</span>
+                </button>
+            </footer>
+        </div>
+
+        <!-- ===== 汎用サブUI ===== -->
+        <!-- 各サブUIを統合し、formタグで囲む -->
+        <div id="sub-ui-container" class="hidden flex-col h-full">
+            <header class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 id="sub-ui-title" class="text-xl font-bold text-gray-800"></h2>
+                <button class="btn-back text-sm text-blue-600 hover:underline">戻る</button>
+            </header>
+            <main class="flex-grow p-6 bg-gray-50 flex flex-col items-center justify-center">
+                <!-- フォーム送信のための form タグ -->
+                <form class="upload-form w-full text-center">
+                    <!-- data-type 属性でアップロード種別を管理 -->
+                    <input type="hidden" name="type" value="">
+                    <div class="drop-area w-full p-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        <p class="mt-4 text-sm text-gray-600">画像ファイルをドラッグ＆ドロップ<br>または</p>
+                        <input type="file" name="file" class="hidden" accept="image/*" required>
+                        <button type="button" class="btn-select-file mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">ファイルを選択</button>
+                    </div>
+                    <!-- 送信ボタンを追加 -->
+                    <button type="submit" class="mt-6 w-full px-4 py-3 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 disabled:bg-gray-400">
+                        送信
+                    </button>
+                </form>
+            </main>
+        </div>
+
+        <!-- ===== ローディング/結果表示UI ===== -->
+        <div id="status-ui" class="hidden flex-col h-full items-center justify-center p-6 bg-gray-50">
+            <div id="loader" class="loader"></div>
+            <p id="status-message" class="mt-4 text-lg text-gray-700"></p>
+            <button id="btn-back-to-main" class="mt-8 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">メインに戻る</button>
+        </div>
+
+    </div>
+
+    <script>
+        // =================================================
+        // n8n Webhook URL をここに設定してください
+        // =================================================
+        const N8N_WEBHOOK_URL = 'https://my-n8n.xvps.jp/webhook-test/webhook-passbook-v4'; // ★★★ n8nで発行したWebhookのURLに書き換える ★★★
+
+        // DOM要素の取得
+        const mainUI = document.getElementById('main-ui');
+        const subUIContainer = document.getElementById('sub-ui-container');
+        const statusUI = document.getElementById('status-ui');
+        const loader = document.getElementById('loader');
+        const statusMessage = document.getElementById('status-message');
+        
+        const subUITitle = document.getElementById('sub-ui-title');
+        const uploadForm = document.querySelector('.upload-form');
+        const typeInput = uploadForm.querySelector('input[name="type"]');
+        const fileInput = uploadForm.querySelector('input[name="file"]');
+        const dropArea = document.querySelector('.drop-area');
+        const dropAreaP = dropArea.querySelector('p');
+        const btnSelectFile = document.querySelector('.btn-select-file');
+
+        const menuButtons = document.querySelectorAll('.btn-menu');
+        const backButtons = document.querySelectorAll('.btn-back');
+        const btnBackToMain = document.getElementById('btn-back-to-main');
+
+        const uiViews = [mainUI, subUIContainer, statusUI];
+
+        // UI表示を切り替える関数
+        const showView = (viewToShow) => {
+            uiViews.forEach(view => view.classList.add('hidden'));
+            viewToShow.classList.remove('hidden');
+            viewToShow.classList.add('flex');
+        };
+
+        // サブUIを初期化して表示する関数
+        const setupAndShowSubUI = (type) => {
+            let title = '';
+            switch (type) {
+                case 'cash': title = '現金出納帳データ化'; break;
+                case 'bank': title = '通帳データ化'; break;
+                case 'card': title = 'カード明細データ化'; break;
+            }
+            subUITitle.textContent = title;
+            typeInput.value = type;
+            uploadForm.reset(); // フォームをリセット
+            dropAreaP.innerHTML = '画像ファイルをドラッグ＆ドロップ<br>または';
+            btnSelectFile.textContent = 'ファイルを選択';
+            showView(subUIContainer);
+        };
+
+        // メニューボタンのイベントリスナー
+        menuButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target;
+                const type = targetId.split('-').pop(); // 'cash', 'bank', 'card'
+                setupAndShowSubUI(type);
+            });
+        });
+
+        // 戻るボタンのイベントリスナー
+        backButtons.forEach(button => {
+            button.addEventListener('click', () => showView(mainUI));
+        });
+        btnBackToMain.addEventListener('click', () => showView(mainUI));
+
+        // ファイル選択ボタンのクリック
+        btnSelectFile.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // ファイルが選択された時の処理
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                dropAreaP.textContent = `選択中のファイル: ${fileName}`;
+                btnSelectFile.textContent = 'ファイルを変更';
+            }
+        });
+
+        // ドラッグ＆ドロップのイベント
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+        dropArea.addEventListener('dragover', () => dropArea.classList.add('drag-over'));
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+        dropArea.addEventListener('drop', (e) => {
+            dropArea.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        });
+
+        // フォーム送信時の処理
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // デフォルトの送信をキャンセル
+
+            if (N8N_WEBHOOK_URL === 'https://YOUR_N8N_WEBHOOK_URL') {
+                alert('n8nのWebhook URLを設定してください。');
+                return;
+            }
+
+            // ローディング画面を表示
+            showView(statusUI);
+            loader.style.display = 'block';
+            statusMessage.textContent = 'データを送信中...';
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData, // FormDataをそのままbodyに設定
+                });
+
+                if (!response.ok) {
+                    // HTTPステータスがエラーの場合
+                    throw new Error(`サーバーエラー: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // 成功時の処理
+                loader.style.display = 'none';
+                statusMessage.textContent = result.message || 'データ化のリクエストを受け付けました。';
+
+            } catch (error) {
+                // エラー時の処理
+                console.error('送信エラー:', error);
+                loader.style.display = 'none';
+                statusMessage.textContent = 'エラーが発生しました。もう一度お試しください。';
+            }
+        });
+
+    </script>
+
+</body>
+</html>
