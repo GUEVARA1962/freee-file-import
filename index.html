@@ -1,109 +1,213 @@
-<script>
-    // ===== 定数 =====
-    // ▼▼▼▼▼ n8nのWebhookノードのPRODUCTION URLを貼り付けてください ▼▼▼▼▼
-    const webhookUrl = 'YOUR_N8N_WEBHOOK_PRODUCTION_URL';
-    // ▲▲▲▲▲ n8nのWebhookノードのPRODUCTION URLを貼り付けてください ▲▲▲▲▲
-
-    // ===== DOM要素の取得 =====
-    const mainUI = document.getElementById('main-ui');
-    const subUICash = document.getElementById('sub-ui-cash');
-    const subUIBank = document.getElementById('sub-ui-bank');
-    const subUICard = document.getElementById('sub-ui-card');
-    const backButtons = document.querySelectorAll('.btn-back');
-
-    // ===== 表示切り替え関数 =====
-    const showView = (viewToShow) => {
-        [mainUI, subUICash, subUIBank, subUICard].forEach(ui => ui.classList.add('hidden'));
-        viewToShow.classList.remove('hidden');
-        viewToShow.classList.add('flex');
-    };
-
-    // ===== ★★★ 新しいファイル送信関数（複数ファイル対応） ★★★ =====
-    const handleFileUploads = async (files, dropArea) => {
-        if (!webhookUrl || webhookUrl === 'YOUR_N8N_WEBHOOK_PRODUCTION_URL') {
-            alert('n8nのWebhook URLが設定されていません。scriptタグ内のwebhookUrlを編集してください。');
-            return;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計データ化アプリ</title>
+    <!-- Tailwind CSSとGoogle Fontsを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* ドラッグオーバー時のスタイル */
+        .drag-over {
+            background-color: #e0f2fe; /* sky-100 */
+            border-color: #0284c7; /* sky-600 */
         }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen">
 
-        const p = dropArea.querySelector('p');
-        const button = dropArea.querySelector('button');
-        const totalFiles = files.length;
-        let successCount = 0;
-        let errorCount = 0;
+    <!-- スマートフォンの画面を模したコンテナ -->
+    <div class="w-full max-w-sm h-[80vh] max-h-[700px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 
-        // ローディング表示に切り替え
-        p.textContent = `処理中... (0/${totalFiles} ファイル完了)`;
-        button.disabled = true;
-        button.textContent = '処理中...';
-        dropArea.classList.add('opacity-50', 'cursor-not-allowed');
+        <!-- ===== メインUI ===== -->
+        <div id="main-ui" class="flex flex-col h-full">
+            <header class="p-6 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-blue-500">freee 会計</h1>
+                <p class="text-2xl text-black mt-1">データ化アプリ</p>
+            </header>
+            <main class="flex-grow p-6 bg-gray-50 flex items-center justify-center">
+                <p class="text-center text-gray-600">下のメニューからデータ化する<br>項目を選択してください</p>
+            </main>
+            <footer class="grid grid-cols-3 gap-4 p-6 border-t border-gray-200 bg-white">
+                <!-- 各ボタンにIDを正しく設定 -->
+                <button id="btn-cash" class="flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                    <svg class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span class="text-sm font-medium">現金</span>
+                </button>
+                <button id="btn-bank" class="flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                    <svg class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    <span class="text-sm font-medium">通帳</span>
+                </button>
+                <button id="btn-card" class="flex flex-col items-center justify-center p-5 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                    <svg class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    <span class="text-sm font-medium">カード</span>
+                </button>
+            </footer>
+        </div>
 
-        // 各ファイルを順番に処理
-        for (let i = 0; i < totalFiles; i++) {
-            const file = files[i];
-            p.textContent = `処理中... (${i}/${totalFiles}) ファイル名: ${file.name}`;
+        <!-- ===== サブUI（現金）===== -->
+        <div id="sub-ui-cash" class="hidden flex-col h-full">
+            <header class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">現金出納帳のデータ化</h2>
+                <button class="btn-back text-sm text-blue-600 hover:underline">戻る</button>
+            </header>
+            <main class="flex-grow p-6 bg-gray-50 flex items-center justify-center">
+                <div class="upload-area w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 48 48" stroke="currentColor"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <p class="mt-4 text-sm text-gray-600">ここにファイルをドラッグ＆ドロップ<br>または</p>
+                    <input type="file" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf">
+                    <button class="upload-button mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">ファイルを選択</button>
+                </div>
+            </main>
+        </div>
 
-            try {
-                // FileReaderを使ってファイルをBase64文字列に変換
-                const base64String = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = (error) => reject(error);
-                });
+        <!-- ===== サブUI（通帳）===== -->
+        <div id="sub-ui-bank" class="hidden flex-col h-full">
+            <header class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">通帳のデータ化</h2>
+                <button class="btn-back text-sm text-blue-600 hover:underline">戻る</button>
+            </header>
+            <main class="flex-grow p-6 bg-gray-50 flex items-center justify-center">
+                <div class="upload-area w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 48 48" stroke="currentColor"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <p class="mt-4 text-sm text-gray-600">ここにファイルをドラッグ＆ドロップ<br>または</p>
+                    <input type="file" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf">
+                    <button class="upload-button mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">ファイルを選択</button>
+                </div>
+            </main>
+        </div>
 
-                // n8nへJSON形式で送信
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ base64Image: base64String, fileName: file.name }),
-                });
+        <!-- ===== サブUI（カード）===== -->
+        <div id="sub-ui-card" class="hidden flex-col h-full">
+            <header class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-800">カード明細のデータ化</h2>
+                <button class="btn-back text-sm text-blue-600 hover:underline">戻る</button>
+            </header>
+            <main class="flex-grow p-6 bg-gray-50 flex items-center justify-center">
+                <div class="upload-area w-full p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 48 48" stroke="currentColor"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <p class="mt-4 text-sm text-gray-600">ここにファイルをドラッグ＆ドロップ<br>または</p>
+                    <input type="file" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf">
+                    <button class="upload-button mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">ファイルを選択</button>
+                </div>
+            </main>
+        </div>
+    </div>
 
-                if (response.ok) {
-                    successCount++;
-                } else {
-                    errorCount++;
+    <script>
+        // DOMの読み込みが完了してからJavaScriptを実行
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===== 定数 =====
+            // ▼▼▼▼▼ ここにn8nのWebhook URLを貼り付けてください ▼▼▼▼▼
+            const webhookUrl = 'YOUR_N8N_WEBHOOK_PRODUCTION_URL';
+            // ▲▲▲▲▲ ここにn8nのWebhook URLを貼り付けてください ▲▲▲▲▲
+
+            // ===== DOM要素の取得 =====
+            const mainUI = document.getElementById('main-ui');
+            const subUICash = document.getElementById('sub-ui-cash');
+            const subUIBank = document.getElementById('sub-ui-bank');
+            const subUICard = document.getElementById('sub-ui-card');
+            
+            const btnCash = document.getElementById('btn-cash');
+            const btnBank = document.getElementById('btn-bank');
+            const btnCard = document.getElementById('btn-card');
+            const backButtons = document.querySelectorAll('.btn-back');
+
+            // ===== 表示切り替え関数 =====
+            const showView = (viewToShow) => {
+                [mainUI, subUICash, subUIBank, subUICard].forEach(ui => ui.classList.add('hidden'));
+                viewToShow.classList.remove('hidden');
+                viewToShow.classList.add('flex');
+            };
+
+            // ===== ファイル送信関数 =====
+            const handleFileUploads = async (files, dropArea) => {
+                if (!webhookUrl || webhookUrl.includes('YOUR_N8N_WEBHOOK_PRODUCTION_URL')) {
+                    alert('n8nのWebhook URLが設定されていません。scriptタグ内のwebhookUrlを編集してください。');
+                    return;
                 }
-            } catch (error) {
-                console.error('Upload error:', error);
-                errorCount++;
-            }
-            p.textContent = `処理中... (${i + 1}/${totalFiles} ファイル完了)`;
-        }
 
-        // 最終結果を表示
-        if (errorCount > 0) {
-            p.textContent = `❌ 処理完了: ${successCount}件成功, ${errorCount}件失敗。`;
-        } else {
-            p.textContent = `✅ 全${successCount}件の処理が完了しました！`;
-        }
-        button.textContent = '別のファイルを選択';
-        button.disabled = false;
-        dropArea.classList.remove('opacity-50', 'cursor-not-allowed');
-    };
+                const p = dropArea.querySelector('p');
+                const button = dropArea.querySelector('.upload-button');
+                const totalFiles = files.length;
+                let successCount = 0;
+                let errorCount = 0;
 
-    // ===== イベントリスナーの設定 =====
-    document.getElementById('btn-cash').addEventListener('click', () => showView(subUICash));
-    document.getElementById('btn-bank').addEventListener('click', () => showView(subUIBank));
-    document.getElementById('btn-card').addEventListener('click', () => showView(subUICard));
+                button.disabled = true;
+                dropArea.classList.add('opacity-50');
 
-    backButtons.forEach(button => button.addEventListener('click', () => showView(mainUI)));
+                for (let i = 0; i < totalFiles; i++) {
+                    const file = files[i];
+                    p.innerHTML = `処理中: ${i + 1}/${totalFiles}<br>${file.name}`;
+                    button.textContent = `処理中... (${i + 1}/${totalFiles})`;
 
-    document.querySelectorAll('div[class*="border-dashed"]').forEach(dropArea => {
-        const input = dropArea.querySelector('input[type="file"]');
-        const button = dropArea.querySelector('button');
-        button.addEventListener('click', () => input.click());
-        
-        const onFilesSelected = (files) => {
-            if (files.length > 0) handleFileUploads(files, dropArea);
-        };
+                    try {
+                        const base64String = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.readAsDataURL(file);
+                            reader.onload = () => resolve(reader.result.split(',')[1]);
+                            reader.onerror = (error) => reject(error);
+                        });
 
-        input.addEventListener('change', (e) => onFilesSelected(e.target.files));
-        dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('drag-over'); });
-        dropArea.addEventListener('dragleave', (e) => { e.preventDefault(); dropArea.classList.remove('drag-over'); });
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('drag-over');
-            onFilesSelected(e.dataTransfer.files);
+                        const response = await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ base64Image: base64String, fileName: file.name }),
+                        });
+
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        errorCount++;
+                    }
+                }
+
+                if (errorCount > 0) {
+                    p.innerHTML = `❌ 処理完了: ${successCount}件成功, ${errorCount}件失敗。`;
+                } else {
+                    p.innerHTML = `✅ 全${successCount}件の処理が完了しました！<br>Googleスプレッドシートを確認してください。`;
+                }
+                button.textContent = '別のファイルを選択';
+                button.disabled = false;
+                dropArea.classList.remove('opacity-50');
+            };
+
+            // ===== イベントリスナーの設定 =====
+            btnCash.addEventListener('click', () => showView(subUICash));
+            btnBank.addEventListener('click', () => showView(subUIBank));
+            btnCard.addEventListener('click', () => showView(subUICard));
+
+            backButtons.forEach(button => button.addEventListener('click', () => showView(mainUI)));
+
+            document.querySelectorAll('.upload-area').forEach(dropArea => {
+                const input = dropArea.querySelector('input[type="file"]');
+                const button = dropArea.querySelector('.upload-button');
+                
+                button.addEventListener('click', () => input.click());
+                
+                const onFilesSelected = (fileList) => {
+                    if (fileList.length > 0) {
+                        handleFileUploads(Array.from(fileList), dropArea);
+                    }
+                };
+
+                input.addEventListener('change', (e) => onFilesSelected(e.target.files));
+                
+                dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('drag-over'); });
+                dropArea.addEventListener('dragleave', (e) => { e.preventDefault(); dropArea.classList.remove('drag-over'); });
+                dropArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropArea.classList.remove('drag-over');
+                    onFilesSelected(e.dataTransfer.files);
+                });
+            });
         });
-    });
-</script>
+    </script>
+</body>
+</html>
