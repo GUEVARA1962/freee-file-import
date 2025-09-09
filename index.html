@@ -101,7 +101,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // ===== 定数 =====
             // ▼▼▼▼▼ ここにn8nのWebhook URLを貼り付けてください ▼▼▼▼▼
-            const webhookUrl = 'https://my-n8n.xvps.jp/webhook/webhook-passbook-v4';
+            const webhookUrl = 'https://my-n8n.xvps.jp/webhook-test/webhook-passbook-v4';
             // ▲▲▲▲▲ ここにn8nのWebhook URLを貼り付けてください ▲▲▲▲▲
 
             // ===== DOM要素の取得 =====
@@ -124,7 +124,7 @@
 
             // ===== ファイル送信関数 =====
             const handleFileUploads = async (files, dropArea) => {
-                if (!webhookUrl || webhookUrl.includes('https://my-n8n.xvps.jp/webhook/webhook-passbook-v4')) {
+                if (!webhookUrl || webhookUrl.includes('https://my-n8n.xvps.jp/webhook-test/webhook-passbook-v4')) {
                     alert('n8nのWebhook URLが設定されていません。scriptタグ内のwebhookUrlを編集してください。');
                     return;
                 }
