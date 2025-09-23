@@ -124,7 +124,7 @@
 
             // ===== ファイル送信関数 =====
             const handleFileUploads = async (files, dropArea) => {
-                if (!webhookUrl || webhookUrl.includes('YOUR_N8N_WEBHOOK_PRODUCTION_URL')) {
+                if (!webhookUrl || webhookUrl.includes('https://my-n8n.xvps.jp/webhook/webhook-passbook-v4')) {
                     alert('n8nのWebhook URLが設定されていません。scriptタグ内のwebhookUrlを編集してください。');
                     return;
                 }
